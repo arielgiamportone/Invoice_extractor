@@ -4,6 +4,7 @@ from tkinter import filedialog, messagebox, ttk, simpledialog
 from PIL import Image, ImageTk
 import fitz
 import re
+import sys
 
 # Importar el gestor de plantillas y el extractor de PDF
 from templates.manager import TemplateManager
@@ -34,20 +35,21 @@ class MainWindow:
         self.create_menu()
 
     def _set_icon(self):
-        """Configura el ícono de la aplicación."""
+        """Configura el ícono de la aplicación utilizando iconphoto."""
         try:
-            # Primero, intenta usar un archivo ICO
-            ico_path = os.path.join("assets", "IntervalorLogo.ico")
-            if os.path.exists(ico_path):
-                self.root.iconbitmap(ico_path)
+            # Determina la ruta base: si la app está empaquetada, usa sys._MEIPASS
+            if getattr(sys, 'frozen', False):
+                base_path = sys._MEIPASS
             else:
-                # Si el ICO no está disponible, intenta usar un PNG
-                png_path = os.path.join("assets", "IntervalorLogo.png")
-                if os.path.exists(png_path):
-                    logo_img = ImageTk.PhotoImage(file=png_path)
-                    self.root.iconphoto(False, logo_img)
-                else:
-                    print("Logo no encontrado en:", ico_path, "ni en:", png_path)
+                base_path = os.path.abspath(".")
+
+            # Construye la ruta correcta sin la barra inclinada inicial
+            logo_path = os.path.join(base_path, "assets", "IntervalorLogo.png")
+            if os.path.exists(logo_path):
+                logo_img = ImageTk.PhotoImage(file=logo_path)
+                self.root.iconphoto(False, logo_img)
+            else:
+                print("Logo no encontrado en", logo_path)
         except Exception as e:
             print("Error al cargar el logo:", e)
 
@@ -91,17 +93,25 @@ class MainWindow:
         self.top_frame.pack(fill=tk.X, padx=5, pady=5)
         self._set_icon()
 
-        # Agregar logo en la parte superior (opcional)
-        logo_path = os.path.join("assets", "IntervalorLogo.png")
+        # Determina la ruta base: si la app está empaquetada, usa sys._MEIPASS
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.abspath(".")
+
+        # Cargar y mostrar el logo en el lado izquierdo
+        logo_path = os.path.join(base_path, "assets", "IntervalorLogo.png")
         if os.path.exists(logo_path):
             try:
                 logo_img = Image.open(logo_path)
-                logo_img = logo_img.resize((75, 35))  # Ajustar el tamaño según convenga
+                logo_img = logo_img.resize((75, 35))  # Ajusta el tamaño según convenga
                 self.tk_logo = ImageTk.PhotoImage(logo_img)
                 logo_label = ttk.Label(self.top_frame, image=self.tk_logo)
                 logo_label.pack(side=tk.LEFT, padx=5)
             except Exception as e:
                 print("Error al cargar el logo en la interfaz:", e)
+        else:
+            print("Logo no encontrado en", logo_path)
 
         self.btn_load = ttk.Button(self.top_frame, text="Cargar PDF", command=self.load_pdf)
         self.btn_load.pack(side=tk.LEFT, padx=5)
